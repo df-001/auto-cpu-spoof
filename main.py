@@ -4,7 +4,9 @@ import os
 import winreg
 import json
 
-CONFIG_FILE = "cpu_spoof_cfg.json"
+# resolve config path relative to the executable
+_BASE_DIR = os.path.dirname(os.path.abspath(sys.executable if getattr(sys, 'frozen', False) else __file__))
+CONFIG_FILE = os.path.join(_BASE_DIR, "cpu_spoof_cfg.json")
 REG_RUN_PATH = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
 REG_CPU_PATH = r"HARDWARE\DESCRIPTION\System\CentralProcessor"
 PROCESS_NAME = "AutoCPUSpoofer"
@@ -13,7 +15,8 @@ def is_admin():
     return ctypes.windll.shell32.IsUserAnAdmin()
 
 def run_as_admin():
-    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1) # reruns program as admin
+    args = " ".join(sys.argv[1:])  # forwards arguments to the elevated process
+    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, args, None, 1)
 
 def load_config():
     if os.path.exists(CONFIG_FILE):
@@ -43,13 +46,15 @@ def manage_startup(action):
 
             config["startup"] = True
             print("[SUCCESS]: Added to Windows startup.")
+            save_config(config)
             
-        if action == "remove":
+        elif action == "remove":
             try:
                 winreg.DeleteValue(key, PROCESS_NAME)
 
                 config["startup"] = False
                 print("[SUCCESS]: Removed from Windows startup.")
+                save_config(config)
             except FileNotFoundError:
                 config["startup"] = False
                 print("[ERROR]: Application was not found in startup registry.")
@@ -59,8 +64,6 @@ def manage_startup(action):
         print("[ERROR]: Administrator privileges not granted.")
     except Exception as e:
         print(f"[ERROR] Startup management failed: {e}")
-
-    save_config(config)
 
 
 def get_thread_count():
@@ -81,7 +84,7 @@ def apply_patch(name):
         
         # iterate through each thread
         thread_count = get_thread_count()
-        if thread_count == None:
+        if thread_count is None:
             raise Exception("Failed to retrieve thread count.")
 
         for i in range(thread_count):
@@ -96,11 +99,11 @@ def apply_patch(name):
         
         print(f"[SUCCESS]: Applied patch on ({thread_count+1}) threads.")
 
+        config["cpu_name"] = name
+        save_config(config)
+
     except Exception as e:
         print(f"[ERROR] Failed to apply registry spoof: {e}")
-    
-    config["cpu_name"] = name
-    save_config(config)
 
 config = load_config()
 
