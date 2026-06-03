@@ -11,7 +11,7 @@ A lightweight utility to automatically replace the cosmetic CPU name string in W
  - Administrator is required (Necessary to modify registry keys)
 
 ## Installation & Usage
-1. Download the latest release from the Releases page.
-2. Open auto_cpu_spoof.exe
+1. Download the latest release from the [Releases](https://github.com/df-001/auto-cpu-spoof/releases) page.
+2. Open auto-cpu-spoof.exe
 3. Accept UAC admin prompt.
 4. Verify change in Task manager and close program.
